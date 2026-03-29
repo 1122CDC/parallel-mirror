@@ -1,0 +1,16 @@
+{
+  "name": "whm-workspace",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "server"
+  ],
+  "scripts": {
+    "postinstall": "npm run prisma:generate --workspace server",
+    "build": "npm run build --workspace server",
+    "start": "npm run db:deploy --workspace server && npm run start --workspace server",
+    "prisma:generate": "npm run prisma:generate --workspace server",
+    "db:deploy": "npm run db:deploy --workspace server",
+    "db:seed": "npm run db:seed --workspace server"
+  }
+}

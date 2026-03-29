@@ -1,9 +1,11 @@
 import './loadEnv'
 import { hashPassword } from '../auth/password'
+import { join } from 'node:path'
 
 export interface ServerEnv {
   port: number
   corsOrigins: string[]
+  uploadDir: string
   deepseekBaseUrl: string
   deepseekApiKey: string
   deepseekTextModel: string
@@ -43,6 +45,7 @@ export const env: ServerEnv = {
     'http://localhost:5173',
     'http://localhost:4173',
   ]),
+  uploadDir: process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'),
   deepseekBaseUrl: process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com',
   deepseekApiKey: process.env.DEEPSEEK_API_KEY || '',
   deepseekTextModel: process.env.DEEPSEEK_TEXT_MODEL || process.env.AI_TEXT_MODEL || 'deepseek-chat',

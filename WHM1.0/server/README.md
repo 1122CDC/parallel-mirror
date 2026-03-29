@@ -31,6 +31,7 @@
 - `PORT=3001`
 - `CORS_ORIGINS=http://localhost:5173,http://localhost:4173`
 - `DATABASE_URL=file:C:/Users/7_0/AppData/Local/WHM1/dev.db`
+- `UPLOAD_DIR=./uploads`
 - `DEEPSEEK_BASE_URL=https://api.deepseek.com`
 - `DEEPSEEK_API_KEY=你的 DeepSeek 密钥`
 - `DEEPSEEK_TEXT_MODEL=deepseek-chat`
@@ -38,6 +39,13 @@
 - `AI_PROXY_API_KEY=你的图片代理密钥`
 - `AI_IMAGE_MODEL=gemini-2.0-flash-exp-image-generation`
 - `AI_REQUEST_TIMEOUT_MS=60000`
+
+生产环境建议：
+
+- `DATABASE_URL` 指向持久化数据库文件，例如 `file:/var/data/dev.db`
+- `UPLOAD_DIR` 指向持久化上传目录，例如 `/var/data/uploads`
+- `ADMIN_TOKEN_SECRET` 使用随机长字符串，避免默认值
+- 如果不打算在生产环境使用 AI 功能，可以先不填 `DEEPSEEK_API_KEY` 和 `AI_PROXY_API_KEY`
 
 说明：
 
@@ -80,6 +88,12 @@ npm run db:seed
 ```bash
 npm run build
 npm run start
+```
+
+如果是在云端部署，建议先跑数据库迁移：
+
+```bash
+npm run db:deploy
 ```
 
 ## 登录流程

@@ -5,6 +5,7 @@ import { join } from 'node:path'
 import { env } from './config/env'
 import { createApiRouter } from './routes'
 import type { AppStore } from './store/contracts'
+import { getUploadDir } from './utils/upload'
 
 const publicDir = join(process.cwd(), 'public')
 const h5DistDir = join(publicDir, 'h5')
@@ -37,7 +38,7 @@ export function createApp(store: AppStore) {
   )
   app.use(express.json({ limit: '2mb' }))
   app.use(express.urlencoded({ extended: true }))
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')))
+  app.use('/uploads', express.static(getUploadDir()))
 
   app.use('/api', createApiRouter(store))
   app.use('/admin', express.static(adminDistDir, { index: false }))

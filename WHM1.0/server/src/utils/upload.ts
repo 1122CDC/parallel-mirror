@@ -1,7 +1,8 @@
 import { join } from 'node:path'
+import { env } from '../config/env'
 
 export function getUploadDir() {
-  return join(process.cwd(), 'uploads')
+  return env.uploadDir || join(process.cwd(), 'uploads')
 }
 
 export function sanitizeUploadFileName(originalName: string) {
