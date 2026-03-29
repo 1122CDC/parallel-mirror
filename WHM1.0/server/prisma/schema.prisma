@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id
+  phone        String?        @unique
+  passwordHash  String?
+  nickname     String?
+  avatarUrl    String?
+  status       String         @default("active")
+  createdAt    Float
+  updatedAt    Float
+  profile      UserProfile?
+  branches     Branch[]
+  messages     Message[]
+  moments      Moment[]
+  momentComments MomentComment[]
+  momentLikes  MomentLike[]
+  files        FileRecord[]
+  authSessions AuthSession[]
+  aiJobs       AiJob[]
+}
+
+model UserProfile {
+  id           String  @id
+  userId       String  @unique
+  name         String
+  gender       String
+  age          Int
+  profession   String
+  city         String
+  bio          String
+  mainBranchId String?
+  updatedAt    Float
+  user         User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Branch {
+  id           String    @id
+  userId       String
+  branchNumber String
+  name         String
+  profession   String
+  workplace    String
+  world        String
+  icon         String
+  color        String
+  bio          String
+  coverUrl     String
+  status       String
+  sourceYear   String?
+  sourceDesc   String?
+  timestamp    Float
+  createdAt    Float
+  updatedAt    Float
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages     Message[]
+  moments      Moment[]
+
+  @@unique([userId, branchNumber])
+  @@index([userId])
+  @@index([timestamp])
+}
+
+model Message {
+  id          String  @id
+  userId      String
+  branchId    String
+  senderType  String
+  content     String
+  contentType String  @default("text")
+  isRead      Boolean @default(false)
+  timestamp   Float
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch      Branch  @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@index([branchId, timestamp])
+}
+
+model Moment {
+  id         String         @id
+  userId     String
+  branchId   String
+  content    String
+  imageUrl   String?
+  timestamp  Float
+  createdAt   Float
+  updatedAt   Float
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch     Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  comments   MomentComment[]
+  likes      MomentLike[]
+
+  @@index([branchId, timestamp])
+}
+
+model MomentComment {
+  id        String  @id
+  momentId  String
+  userId    String
+  branchId  String?
+  userName  String
+  content   String
+  timestamp Float
+  moment    Moment  @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([momentId, timestamp])
+}
+
+model MomentLike {
+  id        String  @id
+  momentId  String
+  userId    String
+  userName  String
+  timestamp Float
+  moment    Moment  @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, userName])
+  @@index([momentId, timestamp])
+}
+
+model FileRecord {
+  id        String  @id
+  userId    String
+  fileName  String
+  fileUrl   String
+  mimeType  String
+  size      Int
+  source    String
+  timestamp Float
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, timestamp])
+}
+
+model AiJob {
+  id          String   @id
+  userId      String
+  jobType     String
+  prompt      String
+  status      String
+  resultJson  String?
+  errorMsg    String?
+  createdAt   Float
+  completedAt Float?
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model AuthSession {
+  token      String  @id
+  userId     String
+  createdAt  Float
+  lastSeenAt Float
+  expiresAt  Float
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}

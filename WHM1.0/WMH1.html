@@ -1,0 +1,752 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hello, my world</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@700&display=swap');
+        
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background-color: #f2f2f2;
+            color: #1a1a1a;
+            overflow: hidden;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* 页面切换动画 */
+        .page-layer {
+            position: fixed;
+            inset: 0;
+            background-color: #f2f2f2;
+            z-index: 100;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(100%);
+            display: flex;
+            flex-direction: column;
+        }
+        .page-active { transform: translateX(0); }
+
+        /* 朋友圈卡片：1:1 复刻截图排版 */
+        .moment-card-pro {
+            background-color: white;
+            border-radius: 12px;
+            margin: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+
+        .header-area {
+            display: flex;
+            padding: 16px;
+            align-items: center;
+        }
+
+        .avatar-gold-ring {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid #facc15;
+            padding: 2px;
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+
+        .no-id {
+            font-family: 'Noto Serif SC', serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .job-badge-v5 {
+            background-color: #fef9c3;
+            color: #92400e;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-left: 10px;
+            border: 1px solid rgba(217, 119, 6, 0.1);
+        }
+
+        .meta-line {
+            color: #999;
+            font-size: 13px;
+            margin-top: 1px;
+            display: flex;
+            align-items: center;
+        }
+
+        .meta-dot {
+            width: 3px;
+            height: 3px;
+            background-color: #ccc;
+            border-radius: 50%;
+            margin: 0 8px;
+        }
+
+        .live-tag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            color: #facc15;
+            font-size: 10px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            z-index: 10;
+        }
+
+        .interaction-box {
+            background-color: #f7f7f7;
+            border-radius: 6px;
+            margin-top: 12px;
+            padding: 10px;
+        }
+
+        .active-tab { color: #07c160 !important; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .chat-bubble-left { background-color: white; border-radius: 6px; position: relative; }
+        .chat-bubble-right { background-color: #95ec69; color: #000; border-radius: 6px; position: relative; }
+        
+        .scan-line {
+            width: 100%;
+            height: 2px;
+            background: #007AFF;
+            position: absolute;
+            top: 0;
+            animation: scan 3s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0%; } 100% { top: 100%; } }
+
+        .moments-cover { height: 280px; background-color: #1a1a1a; position: relative; background-size: cover; background-position: center; }
+        .moments-cover-avatar { position: absolute; right: 15px; bottom: -20px; border: 3px solid white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 24px; color: white; background-color: #333; }
+        .comment-pro { font-size: 13px; line-height: 1.6; margin-top: 2px; }
+        .comment-author { color: #576b95; font-weight: bold; margin-right: 4px; }
+        .likes-box { color: #576b95; font-size: 12px; font-weight: bold; border-bottom: 0.5px solid #eee; padding-bottom: 6px; margin-bottom: 6px; display: flex; align-items: center; }
+        
+        /* 个人中心输入框优化 */
+        .profile-input {
+            width: 100%;
+            height: 44px;
+            background-color: white;
+            border-radius: 8px;
+            padding: 0 12px;
+            font-size: 15px;
+            outline: none;
+            border: 0.5px solid #e5e7eb;
+        }
+        .profile-label {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            margin-left: 4px;
+            display: block;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+
+    <div id="toast" class="fixed top-10 left-1/2 -translate-x-1/2 bg-black/80 text-white px-6 py-3 rounded-full text-sm z-[3000] hidden"></div>
+
+    <!-- 顶部主导航 -->
+    <header id="main-header" class="bg-[#f2f2f2] h-12 flex items-center justify-between px-4 shrink-0 z-50 sticky top-0">
+        <h1 id="header-title" class="text-lg font-bold text-slate-800">Hello, my world</h1>
+        <div class="flex items-center space-x-4">
+            <i data-lucide="search" class="w-5 h-5 text-slate-600"></i>
+            <i data-lucide="plus-circle" class="w-5 h-5 cursor-pointer text-slate-600 hover:text-black" onclick="window.openScan()"></i>
+        </div>
+    </header>
+
+    <!-- 主列表 -->
+    <main id="content-area" class="flex-1 overflow-y-auto hide-scrollbar pb-16"></main>
+
+    <!-- 朋友圈页面 -->
+    <div id="moments-page" class="page-layer overflow-y-auto hide-scrollbar">
+        <header class="h-12 flex items-center justify-between px-4 bg-[#f2f2f2] border-b shrink-0 sticky top-0 z-[130]">
+            <i data-lucide="chevron-left" class="w-6 h-6 cursor-pointer text-slate-800" onclick="window.closeMoments()"></i>
+            <span class="font-bold text-slate-800">朋友圈</span>
+            <i data-lucide="camera" class="w-6 h-6 text-slate-800"></i>
+        </header>
+        <div id="moments-header-container"></div>
+        <div id="moments-list" class="pb-24"></div>
+    </div>
+
+    <!-- 探测控制台 -->
+    <div id="scan-page" class="page-layer">
+        <header class="h-12 flex items-center px-4 bg-white border-b shrink-0">
+            <i data-lucide="chevron-left" class="w-6 h-6 cursor-pointer text-slate-800" onclick="window.closeScan()"></i>
+            <span class="ml-2 font-bold">维度探测</span>
+        </header>
+        <div class="flex-1 overflow-y-auto p-6 flex flex-col items-center bg-white">
+            <div id="scan-input-step" class="w-full max-w-sm space-y-6">
+                <div class="text-center py-6">
+                    <div class="w-16 h-16 bg-blue-50 rounded-2xl mx-auto flex items-center justify-center text-blue-500 relative overflow-hidden">
+                        <i data-lucide="radar" class="w-8 h-8"></i>
+                        <div class="scan-line"></div>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-500 font-bold">输入分歧节点，抓取平行人生</p>
+                </div>
+                <input type="number" id="scan-year" placeholder="年份 (例: 2012)" class="w-full h-12 bg-gray-100 rounded-lg px-4 outline-none font-bold">
+                <textarea id="scan-desc" placeholder="决策内容 (例: 当年没考研，选择回老家创业开了个烧烤摊...)" class="w-full h-32 bg-gray-100 rounded-lg p-4 text-sm outline-none resize-none font-medium"></textarea>
+                <button onclick="window.requestPreview()" class="w-full h-12 bg-[#07c160] text-white rounded-lg font-bold shadow-md active:scale-95 transition-all">推演人生</button>
+            </div>
+
+            <div id="scan-preview-step" class="hidden w-full max-w-sm space-y-6">
+                <div class="bg-white rounded-2xl p-6 shadow-xl border relative overflow-hidden">
+                    <div class="flex flex-col items-center">
+                        <div class="avatar-gold-ring mb-3">
+                            <div id="preview-icon-container" class="w-full h-full rounded-full flex items-center justify-center text-white"><i id="preview-icon" data-lucide="user"></i></div>
+                        </div>
+                        <div class="flex items-center">
+                            <span id="preview-name" class="font-bold no-id">No.001</span>
+                            <span id="preview-job" class="job-badge-v5">推演中</span>
+                        </div>
+                        <div id="preview-workplace" class="text-xs text-gray-400 mt-2 font-bold tracking-tight">定位单位中...</div>
+                        <div class="w-full h-px bg-gray-100 my-4"></div>
+                        <p id="preview-bio" class="text-sm text-gray-600 leading-relaxed text-left w-full italic"></p>
+                    </div>
+                </div>
+                <div class="flex space-x-3">
+                    <button onclick="window.closeScan()" class="flex-1 h-12 bg-gray-100 rounded-lg font-bold text-gray-500">放弃</button>
+                    <button onclick="window.confirmAddBranch()" class="flex-[2] h-12 bg-[#07c160] text-white rounded-lg font-bold shadow-md">同步到维度</button>
+                </div>
+            </div>
+
+            <div id="scanning-status" class="hidden absolute inset-0 bg-white/95 z-50 flex flex-col items-center justify-center">
+                <div class="w-10 h-10 border-4 border-gray-100 border-t-green-500 rounded-full animate-spin mb-3"></div>
+                <p class="text-sm font-bold text-gray-500">正在同步因果律...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 聊天详情页 -->
+    <div id="chat-page" class="page-layer">
+        <header class="h-12 bg-[#f2f2f2] flex items-center justify-between px-4 border-b shrink-0">
+            <div class="flex items-center" onclick="window.closeChat()">
+                <i data-lucide="chevron-left" class="w-6 h-6 cursor-pointer text-slate-800"></i>
+                <span id="chat-partner-name" class="font-bold ml-1 text-slate-800 no-id" style="font-size:16px">No.001</span>
+            </div>
+            <i data-lucide="more-horizontal" class="w-6 h-6 text-slate-800"></i>
+        </header>
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 hide-scrollbar bg-[#f2f2f2]" id="chat-messages"></div>
+        <footer class="bg-[#f7f7f7] p-3 flex items-center space-x-3 safe-area-bottom border-t">
+            <input type="text" id="chat-input" placeholder="输入..." class="flex-1 h-10 bg-white rounded px-3 text-sm outline-none">
+            <button onclick="window.sendMessage()" class="w-16 h-10 bg-[#07c160] text-white rounded font-bold text-sm">发送</button>
+        </footer>
+    </div>
+
+    <!-- 底部 4 栏导航 -->
+    <div id="tab-bar" class="fixed bottom-0 left-0 right-0 z-[90] bg-[#f7f7f7] border-t flex items-center justify-around px-2 pb-safe h-14">
+        <div class="flex flex-col items-center active-tab cursor-pointer flex-1" onclick="window.switchTab('chats')">
+            <i data-lucide="message-square" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-0.5">消息</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-500 cursor-pointer flex-1" onclick="window.switchTab('contacts')">
+            <i data-lucide="book-user" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-0.5">通讯录</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-500 cursor-pointer flex-1" onclick="window.switchTab('discover')">
+            <i data-lucide="compass" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-0.5">发现</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-500 cursor-pointer flex-1" onclick="window.switchTab('me')">
+            <i data-lucide="user" class="w-6 h-6"></i>
+            <span class="text-[10px] mt-0.5">我</span>
+        </div>
+    </div>
+
+    <!-- 评论弹窗 -->
+    <div id="comment-modal" class="hidden fixed inset-0 bg-black/50 z-[300] flex items-end transition-opacity">
+        <div class="w-full bg-[#f7f7f7] p-4 rounded-t-xl animate-in slide-in-from-bottom">
+            <textarea id="comment-input" class="w-full h-24 bg-white rounded p-3 text-sm outline-none border-none resize-none" placeholder="回复评论..."></textarea>
+            <div class="flex justify-end space-x-3 mt-3">
+                <button onclick="window.closeCommentModal()" class="px-4 py-2 text-sm text-gray-500">取消</button>
+                <button onclick="window.sendComment()" class="px-6 py-2 bg-[#07c160] text-white rounded text-sm font-bold">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const PROXY_BASE_URL = "https://128api.cn/v1";
+        const PROXY_API_KEY = "sk-Pd3DgvWmbmldgyJwM6AHBC2fM23MKq1Dd7yE9AJVOXSbFy1v";
+        const TEXT_MODEL = "gemini-3.1-pro-high";
+        const IMAGE_MODEL = "gemini-2.0-flash-exp-image-generation";
+
+        const STORAGE_KEY = "da_ge_mainline_v5_final";
+        
+        // --- 核心配置：主线大哥的基准数据 ---
+        let userProfile = { 
+            name: "大哥", 
+            gender: "男", 
+            age: 30, 
+            profession: "源点运营官", 
+            city: "北京", 
+            bio: "主导所有平行宇宙的观测与同步。" 
+        };
+
+        let branches = [];
+        let allMessages = [];
+        let allMoments = [];
+        let currentPartner = null;
+        let currentActiveTab = 'chats';
+        let lastPreviewData = null;
+        let currentCommentMomentId = null;
+
+        function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ userProfile, branches, allMessages, allMoments })); } catch(e){} }
+        function load() {
+            try {
+                const data = localStorage.getItem(STORAGE_KEY);
+                if (data) {
+                    const p = JSON.parse(data);
+                    userProfile = p.userProfile || userProfile;
+                    branches = p.branches || [];
+                    allMessages = p.allMessages || [];
+                    allMoments = p.allMoments || [];
+                }
+            } catch(e){}
+            if (branches.length === 0) {
+                branches.push({ id: 'origin', branchNumber: '000', name: 'No.000', profession: userProfile.profession, workplace: userProfile.city, world: "现实主线", icon: "fingerprint", color: "bg-slate-900", bio: userProfile.bio, cover: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200", status: "ready", timestamp: Date.now() });
+            }
+        }
+
+        const initIcons = () => { if (typeof lucide !== 'undefined') lucide.createIcons(); };
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            if(t) { t.innerText = msg; t.classList.remove('hidden'); setTimeout(() => t.classList.add('hidden'), 3000); }
+        }
+
+        function stripJsonCodeFences(text) {
+            return text.replace(/```json/gi, '').replace(/```/gi, '').trim();
+        }
+
+        // --- 官方算力接口 ---
+        async function aiCall(prompt, systemInstruction, isJson = false) {
+            let streamedText = '';
+
+            try {
+                const response = await fetch(`${PROXY_BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'text/event-stream',
+                        'Authorization': `Bearer ${PROXY_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: TEXT_MODEL,
+                        messages: [
+                            { role: 'system', content: systemInstruction },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: isJson ? 0.2 : 0.85,
+                        stream: true,
+                        ...(isJson ? { response_format: { type: 'json_object' } } : {})
+                    })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `OpenAI request failed with ${response.status}`;
+                    try {
+                        const result = await response.json();
+                        errorMessage = result?.error?.message || errorMessage;
+                    } catch (_) {}
+                    throw new Error(errorMessage);
+                }
+
+                const contentType = response.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) {
+                    const result = await response.json();
+                    const content = result?.choices?.[0]?.message?.content;
+
+                    if (typeof content === 'string' && content.trim()) {
+                        return isJson ? stripJsonCodeFences(content) : content.trim();
+                    }
+
+                    if (Array.isArray(content)) {
+                        const joined = content.map((part) => part?.text || '').join('').trim();
+                        if (joined) {
+                            return isJson ? stripJsonCodeFences(joined) : joined;
+                        }
+                    }
+
+                    throw new Error('OpenAI response is empty');
+                }
+
+                if (!response.body) {
+                    throw new Error('OpenAI response stream is empty');
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let completed = false;
+
+                const appendChunk = (chunk) => {
+                    if (typeof chunk !== 'string' || chunk.length === 0) return;
+                    streamedText += chunk;
+                };
+
+                const processLine = (rawLine) => {
+                    const line = rawLine.replace(/\r$/, '');
+                    if (!line.startsWith('data:')) return;
+
+                    const data = line.slice(5).replace(/^ /, '');
+                    if (!data) return;
+
+                    if (data === '[DONE]') {
+                        completed = true;
+                        return;
+                    }
+
+                    try {
+                        const parsed = JSON.parse(data);
+                        const choice = parsed?.choices?.[0];
+                        const delta = choice?.delta;
+                        appendChunk(delta?.content);
+
+                        if (!streamedText && typeof choice?.message?.content === 'string') {
+                            appendChunk(choice.message.content);
+                        }
+                    } catch (error) {
+                        appendChunk(data);
+                    }
+                };
+
+                try {
+                    while (!completed) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+
+                        let newlineIndex = buffer.indexOf('\n');
+                        while (newlineIndex !== -1) {
+                            const line = buffer.slice(0, newlineIndex);
+                            buffer = buffer.slice(newlineIndex + 1);
+                            processLine(line);
+                            if (completed) break;
+                            newlineIndex = buffer.indexOf('\n');
+                        }
+                    }
+
+                    buffer += decoder.decode();
+                    if (!completed && buffer.trim().length > 0) {
+                        processLine(buffer);
+                    }
+                } finally {
+                    reader.releaseLock();
+                }
+
+                const finalText = streamedText.trim();
+                if (finalText.length > 0) {
+                    return isJson ? stripJsonCodeFences(finalText) : finalText;
+                }
+
+                throw new Error('OpenAI response is empty');
+            } catch (error) {
+                console.error('AI request failed:', error);
+                const message = error instanceof Error && error.message ? error.message : '同步异常';
+                throw new Error(message);
+            }
+        }
+
+        async function generateImage(promptText) {
+            try {
+                const response = await fetch(`${PROXY_BASE_URL}/images/generations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${PROXY_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: IMAGE_MODEL,
+                        prompt: promptText,
+                        size: '1024x1024',
+                        n: 1
+                    })
+                });
+
+                const result = await response.json();
+                if (!response.ok) {
+                    throw new Error(result?.error?.message || `OpenAI image request failed with ${response.status}`);
+                }
+
+                const firstImage = result?.data?.[0];
+                if (typeof firstImage?.url === 'string' && firstImage.url.trim().length > 0) {
+                    return firstImage.url;
+                }
+                if (typeof firstImage?.b64_json === 'string' && firstImage.b64_json.trim().length > 0) {
+                    return `data:image/png;base64,${firstImage.b64_json}`;
+                }
+                return null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        window.switchTab = (tabName) => {
+            currentActiveTab = tabName;
+            const tabBar = document.getElementById('tab-bar');
+            Array.from(tabBar.children).forEach(t => t.classList.remove('active-tab', 'text-gray-500'));
+            const map = { 'chats': 0, 'contacts': 1, 'discover': 2, 'me': 3 };
+            tabBar.children[map[tabName]].classList.add('active-tab');
+            document.getElementById('header-title').innerText = tabName === 'chats' ? 'Hello, my world' : (tabName === 'contacts' ? '通讯录' : (tabName === 'discover' ? '发现' : '个人中心'));
+            renderTabContent(tabName);
+        };
+
+        function renderTabContent(tab) {
+            const area = document.getElementById('content-area');
+            if (tab === 'chats') {
+                let html = `<div class="bg-white divide-y">`;
+                [...branches].sort((a,b) => b.timestamp - a.timestamp).forEach(v => {
+                    const msgs = allMessages.filter(m => m.partnerId === v.id).sort((a,b) => b.timestamp - a.timestamp);
+                    html += `<div class="flex items-center p-3 active:bg-gray-50 cursor-pointer" onclick="window.openChat('${v.id}')">
+                                <div class="avatar-gold-ring mr-3"><div class="w-full h-full ${v.color} rounded-full flex items-center justify-center text-white"><i data-lucide="${v.icon}"></i></div></div>
+                                <div class="flex-1 min-w-0 border-b pb-1">
+                                    <div class="flex justify-between items-center"><span class="font-bold text-[16px]">${v.name}</span><span class="text-[10px] text-gray-400">12:00</span></div>
+                                    <div class="flex items-center mt-0.5"><span class="job-badge-pro ml-0 mr-2" style="font-size:9px">${v.profession}</span><p class="text-xs text-gray-400 truncate">${msgs[0]?.text || `维度信号已锁定`}</p></div>
+                                </div>
+                             </div>`;
+                });
+                area.innerHTML = html + `</div>`;
+            } else if (tab === 'discover') {
+                area.innerHTML = `<div class="bg-white border-y mt-4">
+                                    <div class="flex items-center p-4 active:bg-gray-50 cursor-pointer justify-between" onclick="window.openMoments()">
+                                        <div class="flex items-center"><i data-lucide="aperture" class="w-6 h-6 text-orange-500 mr-4"></i><span class="text-sm">朋友圈</span></div>
+                                        <i data-lucide="chevron-right" class="text-gray-300 w-4 h-4"></i>
+                                    </div>
+                                  </div>`;
+            } else if (tab === 'me') {
+                // --- 完善后的个人中心 UI ---
+                area.innerHTML = `
+                    <div class="bg-white p-6 flex items-center space-x-4 mb-4 border-b">
+                        <div class="w-20 h-20 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-lg border-2 border-yellow-400">源</div>
+                        <div>
+                            <div class="font-black text-2xl text-slate-800">${userProfile.name}</div>
+                            <div class="text-xs text-slate-400 mt-1 font-bold tracking-widest uppercase">Master Timeline Node</div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 space-y-5 border-y">
+                        <div><label class="profile-label">源点姓名 (本尊)</label><input id="p-name" class="profile-input font-bold" value="${userProfile.name}"></div>
+                        <div class="flex space-x-4">
+                            <div class="flex-1"><label class="profile-label">性别</label><select id="p-gender" class="profile-input font-bold"><option ${userProfile.gender==='男'?'selected':''}>男</option><option ${userProfile.gender==='女'?'selected':''}>女</option></select></div>
+                            <div class="flex-1"><label class="profile-label">年龄</label><input type="number" id="p-age" class="profile-input font-bold" value="${userProfile.age}"></div>
+                        </div>
+                        <div><label class="profile-label">当前主线职业</label><input id="p-job" class="profile-input" value="${userProfile.profession}" placeholder="如：产品经理、老板"></div>
+                        <div><label class="profile-label">所在城市</label><input id="p-city" class="profile-input" value="${userProfile.city}"></div>
+                        <div><label class="profile-label">主线简介</label><textarea id="p-bio" class="profile-input h-20 py-2 leading-tight resize-none">${userProfile.bio}</textarea></div>
+                        
+                        <button onclick="window.updateProfile()" class="w-full h-12 bg-black text-white rounded-xl font-bold mt-4 shadow-xl active:scale-95 transition-all">锁定并同步主线基因</button>
+                    </div>
+                    <div class="p-6">
+                        <button onclick="localStorage.clear(); location.reload();" class="w-full text-red-500 text-xs font-black py-4 bg-red-50 rounded-xl uppercase tracking-widest">重置所有维度数据</button>
+                    </div>`;
+            } else if (tab === 'contacts') {
+                let html = `<div class="bg-white divide-y">`;
+                branches.forEach(v => {
+                    html += `<div class="flex items-center p-3 active:bg-gray-50 cursor-pointer">
+                                <div class="avatar-gold-ring mr-3"><div class="w-full h-full ${v.color} rounded-full flex items-center justify-center text-white"><i data-lucide="${v.icon}"></i></div></div>
+                                <div class="flex-1 font-bold text-slate-800">${v.name}<span class="job-badge-pro">${v.profession}</span></div>
+                             </div>`;
+                });
+                area.innerHTML = html + `</div>`;
+            }
+            initIcons();
+        }
+
+        window.updateProfile = () => {
+            userProfile.name = document.getElementById('p-name').value;
+            userProfile.gender = document.getElementById('p-gender').value;
+            userProfile.age = document.getElementById('p-age').value;
+            userProfile.profession = document.getElementById('p-job').value;
+            userProfile.city = document.getElementById('p-city').value;
+            userProfile.bio = document.getElementById('p-bio').value;
+
+            // 更新 No.000 自己的档案
+            const origin = branches.find(b => b.id === 'origin');
+            if(origin) {
+                origin.profession = userProfile.profession;
+                origin.workplace = userProfile.city;
+                origin.bio = userProfile.bio;
+            }
+
+            save(); showToast("主线基因已更新，新推演将参考此模版");
+            renderTabContent('me');
+        };
+
+        // --- 朋友圈 1:1 复刻 ---
+        window.openMoments = () => {
+            document.getElementById('moments-page').classList.add('page-active');
+            const root = branches.find(b => b.id === 'origin');
+            document.getElementById('moments-header-container').innerHTML = `
+                <div class="moments-cover" style="background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.6)), url('${root.cover}')">
+                    <div class="moments-cover-avatar bg-slate-900 border-2 border-white">${userProfile.name.charAt(0)}</div>
+                    <div class="absolute right-24 bottom-2 text-white font-bold text-lg drop-shadow-md">${userProfile.name}</div>
+                </div>`;
+            renderMomentsList();
+        };
+
+        function renderMomentsList() {
+            const container = document.getElementById('moments-list');
+            const list = [...allMoments].sort((a,b) => b.timestamp - a.timestamp);
+            container.innerHTML = list.length === 0 ? `<div class="p-20 text-center text-gray-300 italic">维度波段静默中...</div>` : '';
+            
+            list.forEach(m => {
+                const branch = branches.find(b => b.id === m.branchId) || branches[0];
+                const card = document.createElement('div');
+                card.className = "moment-card-pro animate-in fade-in";
+                let commentsHtml = (m.comments || []).map(c => `<div class="comment-pro"><span class="comment-author">${c.userName}:</span>${c.text}</div>`).join('');
+                let interactionHtml = (m.likes?.length || m.comments?.length) ? `<div class="interaction-box"><div class="likes-box"><i data-lucide="heart" class="w-3.5 h-3.5 fill-red-500 text-red-500 mr-2"></i>${m.likes?.join('，')}</div>${commentsHtml}</div>` : '';
+
+                card.innerHTML = `
+                    <div class="header-area">
+                        <div class="avatar-gold-ring"><div class="w-full h-full ${branch.color} rounded-full flex items-center justify-center text-white"><i data-lucide="${branch.icon}" class="w-6 h-6"></i></div></div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center"><span class="no-id">${branch.name}</span><span class="job-badge-pro">${branch.profession}</span></div>
+                            <div class="meta-line"><span>2小时前</span><div class="meta-dot"></div><span>${branch.workplace}</span></div>
+                        </div>
+                        <i data-lucide="more-horizontal" class="text-gray-300 w-5 h-5"></i>
+                    </div>
+                    ${m.imageUrl ? `<div class="relative w-full overflow-hidden bg-gray-50"><img src="${m.imageUrl}" class="w-full h-auto object-cover max-h-[300px]"><div class="live-tag">● 实时传输</div></div>` : ''}
+                    <div class="p-4 pt-3">
+                        <div class="text-[15px] leading-relaxed mb-4 text-[#111] font-medium">${m.content}</div>
+                        <div class="flex items-center text-gray-400 space-x-8 pb-1">
+                            <div class="flex items-center cursor-pointer active:scale-110" onclick="window.likeMoment('${m.id}')"><i data-lucide="heart" class="w-5 h-5 mr-1.5 ${m.likes?.includes('No.000') ? 'fill-red-500 text-red-500' : ''}"></i><span class="text-xs font-bold">${m.likes?.length || 1245}</span></div>
+                            <div class="flex items-center cursor-pointer" onclick="window.openCommentModal('${m.id}')"><i data-lucide="message-square" class="w-5 h-5 mr-1.5"></i><span class="text-xs font-bold">${m.comments?.length || 245}</span></div>
+                            <div class="flex-1 flex justify-end"><i data-lucide="share-2" class="w-5 h-5"></i></div>
+                        </div>
+                        ${interactionHtml}
+                    </div>`;
+                container.appendChild(card);
+            });
+            initIcons();
+        }
+
+        window.likeMoment = (id) => {
+            const m = allMoments.find(m => m.id === id);
+            if (!m) return;
+            if (m.likes?.includes("No.000")) m.likes = m.likes.filter(n => n !== "No.000");
+            else (m.likes = m.likes || []).push("No.000");
+            save(); renderMomentsList();
+        };
+
+        window.openCommentModal = (id) => { currentCommentMomentId = id; document.getElementById('comment-modal').classList.remove('hidden'); };
+        window.closeCommentModal = () => document.getElementById('comment-modal').classList.add('hidden');
+
+        window.sendComment = async () => {
+            const text = document.getElementById('comment-input').value.trim();
+            if(!text) return;
+            const m = allMoments.find(m => m.id === currentCommentMomentId);
+            (m.comments = m.comments || []).push({ userName: "No.000", text });
+            document.getElementById('comment-input').value = '';
+            window.closeCommentModal(); save(); renderMomentsList();
+            
+            const author = branches.find(b => b.id === m.branchId);
+            if(author.id === 'origin') return;
+            try {
+                await new Promise(r => setTimeout(r, 2000));
+                const sys = `你是[${author.name}]，职业[${author.profession}]，生活在中国的平行时空。你要回复本源世界的大哥评论。写实接地气，15字内。`;
+                const reply = await aiCall(`我的动态：“${m.content}”。大哥评论：“${text}”。回复他一句。`, sys, false);
+                m.comments.push({ userName: author.name, text: `回复 No.000: ${reply}` });
+                save(); renderMomentsList();
+            } catch(e){}
+        };
+
+        // --- 核心探测逻辑 (重点：基于主线数据) ---
+        window.openScan = () => {
+            document.getElementById('scan-input-step').classList.remove('hidden');
+            document.getElementById('scan-preview-step').classList.add('hidden');
+            document.getElementById('scan-page').classList.add('page-active');
+            initIcons();
+        };
+
+        window.requestPreview = async () => {
+            const yr = document.getElementById('scan-year').value;
+            const ds = document.getElementById('scan-desc').value;
+            if(!yr || !ds) return showToast("请输入年份和描述");
+            document.getElementById('scanning-status').classList.remove('hidden');
+            const num = String(branches.length).padStart(3, '0');
+            try {
+                // 向 AI 传递最完整的大哥基因
+                const sys = `你是一个推演中国社会平行人生的AI。
+                现实主线大哥（No.000）的数据如下：姓名[${userProfile.name}]，性别[${userProfile.gender}]，年龄[${userProfile.age}]，目前主线职业[${userProfile.profession}]，主线所在地[${userProfile.city}]，简介[${userProfile.bio}]。
+                请根据分歧点，推演在那条平行线下分身（No.${num}）的生活现状。
+                **职业必须非常写实接地气**：如某某餐饮店老板、程序员、滴滴司机、公职人员等。
+                JSON输出：{ "profession": "具体职业(4字内)", "workplace": "单位全称(如:北京美团总部, 杭州某某饭店)", "icon": "lucide名", "color": "tailwindcss背景色类", "bio": "写实生平简述" }`;
+                
+                const text = await aiCall(`分歧年份：${yr}。决策变故：${ds}。`, sys, true);
+                lastPreviewData = JSON.parse(text);
+                
+                document.getElementById('preview-name').innerText = `No.${num}`;
+                document.getElementById('preview-job').innerText = lastPreviewData.profession;
+                document.getElementById('preview-workplace').innerText = lastPreviewData.workplace;
+                document.getElementById('preview-bio').innerText = lastPreviewData.bio;
+                document.getElementById('preview-icon-container').className = `w-full h-full rounded-full flex items-center justify-center text-white ${lastPreviewData.color}`;
+                document.getElementById('scanning-status').classList.add('hidden');
+                document.getElementById('scan-input-step').classList.add('hidden');
+                document.getElementById('scan-preview-step').classList.remove('hidden');
+                initIcons();
+            } catch (e) { showToast("维度波动，请重试"); document.getElementById('scanning-status').classList.add('hidden'); }
+        };
+
+        window.confirmAddBranch = async () => {
+            if(!lastPreviewData) return;
+            const newId = 'br_' + Date.now();
+            const num = String(branches.length).padStart(3, '0');
+            const b = { id: newId, branchNumber: num, name: `No.${num}`, ...lastPreviewData, cover: `https://source.unsplash.com/featured/800x800/?${encodeURIComponent(lastPreviewData.profession + ',china,work')}`, status: "syncing", timestamp: Date.now() };
+            branches.push(b); save(); window.closeScan(); window.switchTab('chats');
+            try {
+                const res = await aiCall(`你是[${b.name}] 职业[${b.profession}]。参考源点[${userProfile.name}]的特征。生成1条烟火气朋友圈。`, `JSON：{ "moments": [{ "content": "动态文字", "hasImage": true, "visualPrompt": "High quality photography of a ${b.profession} at ${b.workplace}" }] }`, true);
+                const data = JSON.parse(res);
+                for (const m of data.moments) {
+                    const mid = 'mo_'+Date.now()+Math.random();
+                    const img = m.hasImage ? await generateImage(m.visualPrompt) : null;
+                    allMoments.push({ id: mid, branchId: newId, content: m.content, imageUrl: img, timestamp: Date.now(), likes: [], comments: [] });
+                    save();
+                }
+                const found = branches.find(x => x.id === newId); if(found) found.status = "ready";
+                save(); renderTabContent('chats');
+            } catch(e){}
+        };
+
+        window.closeScan = () => document.getElementById('scan-page').classList.remove('page-active');
+        window.closeMoments = () => document.getElementById('moments-page').classList.remove('page-active');
+        window.closeChat = () => document.getElementById('chat-page').classList.remove('page-active');
+        window.openChat = (id) => {
+            currentPartner = branches.find(v => v.id === id);
+            document.getElementById('chat-partner-name').innerText = currentPartner.name;
+            renderChat(); document.getElementById('chat-page').classList.add('page-active'); initIcons();
+        };
+        function renderChat() {
+            const msgs = allMessages.filter(m => m.partnerId === currentPartner.id).sort((a,b) => a.timestamp - b.timestamp);
+            document.getElementById('chat-messages').innerHTML = msgs.map(m => `<div class="flex items-start ${m.isMe ? 'justify-end' : ''} mb-4">${!m.isMe ? `<div class="avatar-gold-ring w-9 h-9 mr-2"><div class="${currentPartner.color} w-full h-full rounded-full flex items-center justify-center text-white"><i data-lucide="${currentPartner.icon}" class="w-4 h-4"></i></div></div>` : ''}<div class="${m.isMe ? 'chat-bubble-right' : 'chat-bubble-left'} p-3 max-w-[70%] text-sm shadow-sm break-words">${m.text}</div></div>`).join('');
+            initIcons();
+            const box = document.getElementById('chat-messages'); box.scrollTop = box.scrollHeight;
+        }
+        window.sendMessage = async () => {
+            const val = document.getElementById('chat-input').value.trim(); if(!val) return;
+            document.getElementById('chat-input').value = '';
+            allMessages.push({ partnerId: currentPartner.id, text: val, isMe: true, timestamp: Date.now() });
+            renderChat();
+            try {
+                const r = await aiCall(val, `你是[${currentPartner.name}] 职业[${currentPartner.profession}]。回复主线源点的大哥。`, false);
+                allMessages.push({ partnerId: currentPartner.id, text: r, isMe: false, timestamp: Date.now() });
+                save(); renderChat();
+            } catch(e){}
+        };
+        window.onload = () => { load(); window.switchTab('chats'); };
+    </script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Dependencies
+**/node_modules/
+
+# Build outputs
+**/dist/
+server/public/
+
+# Runtime data
+server/uploads/
+*.db
+*.sqlite
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+*.err.log
+*.out.log
+
+# Local binaries
+cloudflared.exe
+
